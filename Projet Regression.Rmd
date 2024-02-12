@@ -1,0 +1,17 @@
+---
+title: "Projet Regression"
+author: "Arno LESAGE SD2A PPS"
+date: "`r Sys.Date()`"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Importation des données
+
+```{r echo=FALSE}
+df <- read.csv("simplifiedAmesHousing.csv", header = T, stringsAsFactors = T, sep = ";")
+summary(df)
+```
