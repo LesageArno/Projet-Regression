@@ -6,12 +6,65 @@ output: word_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+library(ggplot2)
+library(dplyr)
+library(corrplot)
+library(skimr)
+library(tidyr)
 ```
 
 ### Importation des données
 
 ```{r echo=FALSE}
-df <- read.csv("simplifiedAmesHousing.csv", header = T, stringsAsFactors = T, sep = ";")
-summary(df)
+df <- read.csv("simplifiedAmesHousing.csv", header = T, sep = ";")
+head(df)
+skimr::skim(df)
+```
+Ici, il faut faire attention à la variable Allays (beaucoup de NA), mais aussi aux variables Bsmt.Half/Full.Bath qui ont beaucoup de 0.
+
+De plus, la variable Order ne semble pas avoir d'importance sérieuse dans le modèle.
+
+## Modification des données
+```{r}
+# NA de Alley
+df$Alley[is.na(df$Alley)] <- "No alley"
+
+# Individu 1342 :
+mean((df %>% dplyr::filter(Neighborhood == "BrkSide", Order != 1342) %>% select(Total.Bsmt.SF))[["Total.Bsmt.SF"]]) #763.8972 #Moyenne de la surface du sous sol dans le quartier
+df[1342,c("Total.Bsmt.SF", "Bsmt.Full.Bath", "Bsmt.Half.Bath")] <- c(763.8972, 0, 0)
+
+# Individu 1498
+df[1498,c("Bsmt.Full.Bath", "Bsmt.Half.Bath")] <- 0
+
+# Individu 2237
+df[2237,c("Garage.Cars", "Garage.Area")] <- 0
+
+#Type des charactere 
+for (i in c("MS.Zoning", "Alley", "Neighborhood", "Sale.Condition")) {
+    df[i] <- factor(df[[i]])
+}
+```
+
+## EDA : Exploratory data analysis
+```{r}
+for (i in names(df)) {
+    plot(df[i], main = i)
+}
+```
+```{r}
+for (i in names(df)) {
+    plot(df$SalePrice~df[[i]], main = i, notch = T, las = 2, pch = 20, varwidth = T)
+}
+```
+Voici ce que l'on peut tirer de chacune des variables :
+- Order : Ne semble pas avoir d'impact important sur le prix
+- MS.Zoning : La majorité des maisons se situent en RL (quartier résidentiel à faible densité), dans cette catégorie, le prix est assez dispersé. Dans les zones à moyenne densité (RM), les pris sont moins dispersés 
+
+```{r}
+corrplot::corrplot(cor(dplyr::select(df, -c(MS.Zoning, Alley, Neighborhood, Sale.Condition, ))), method = "shade")
 ```
